@@ -1,0 +1,7 @@
+\beamer@sectionintoc {1}{Proje Tanımı ve Amaç}{3}{0}{1}
+\beamer@sectionintoc {2}{Sistem Mimarisi}{4}{0}{2}
+\beamer@sectionintoc {3}{Çekirdek Fonksiyonları}{5}{0}{3}
+\beamer@sectionintoc {4}{Yapay Zeka}{7}{0}{4}
+\beamer@sectionintoc {5}{Servisler}{8}{0}{5}
+\beamer@sectionintoc {6}{Demo Görüntüleri}{9}{0}{6}
+\beamer@sectionintoc {7}{Sonuç}{11}{0}{7}

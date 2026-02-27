@@ -1,0 +1,133 @@
+#!/bin/sh
+
+# 1. Mount essential filesystems
+/bin/busybox mount -t proc none /proc
+/bin/busybox mount -t sysfs none /sys
+/bin/busybox mount -t devtmpfs none /dev
+
+# 2. Add busybox to path (assuming we symlink it later, but just in case)
+export PATH=/bin:/usr/bin:/sbin:/usr/sbin
+export HOME=/root
+export TERM=linux
+export TERMINFO=/usr/share/terminfo
+
+# 2.1 Mount Pts (Critical for TUI)
+/bin/busybox mkdir -p /dev/pts
+/bin/busybox mount -t devpts devpts /dev/pts
+
+# 2.2 Install BusyBox Symlinks (Critical for "ls", "cat", "grep", etc.)
+# This makes ALL commands available in /bin
+/bin/busybox --install -s /bin
+
+# 3. Welcome Message
+echo "--------------------------------"
+echo "   NexOS Live System Booting   "
+echo "--------------------------------"
+
+# 3.4 Start Networking (DHCP)
+echo "Starting Networking..."
+# Load VirtualBox Network Driver
+if [ -f /lib/modules/e1000.ko ]; then
+    echo "Loading e1000 driver..."
+    /bin/busybox insmod /lib/modules/e1000.ko
+fi
+
+/bin/busybox mkdir -p /usr/share/udhcpc
+/bin/busybox ln -sf /etc/udhcp.script /usr/share/udhcpc/default.script
+
+# Initialize Loopback (Critical for 127.0.0.1)
+/bin/busybox ip link set lo up
+
+# Find network interface (excluding loopback)
+for iface in $(/bin/busybox ls /sys/class/net/ | /bin/busybox grep -v lo); do
+    echo "Found interface: $iface"
+    /bin/busybox ip link set $iface up
+    /bin/busybox udhcpc -b -i $iface -s /etc/udhcp.script > /var/log/dhcp.log 2>&1 &
+done
+
+# 3.5 Start Ollama Service (AI)
+echo "Starting AI Engine..."
+/bin/busybox mkdir -p /root/.ollama
+
+# Check if GGUF and Modelfile exist
+if [ -f /root/nexos-expert.gguf ] && [ -f /root/Modelfile ]; then
+    echo "   -> GGUF Model: OK"
+    echo "   -> Modelfile: OK"
+else
+    echo "   -> WARNING: AI model files missing!"
+fi
+
+# Start Ollama server
+/bin/busybox nohup /bin/ollama serve > /var/log/ollama.log 2>&1 &
+
+# Wait for Ollama to be ready (check port 11434)
+echo "   -> Waiting for Ollama to start..."
+OLLAMA_READY=0
+for i in 1 2 3 4 5 6 7 8 9 10; do
+    /bin/busybox sleep 2
+    if /bin/busybox wget -q -O /dev/null http://127.0.0.1:11434/api/tags 2>/dev/null; then
+        echo "   -> Ollama is ready!"
+        OLLAMA_READY=1
+        break
+    fi
+    echo "   -> Waiting... ($i/10)"
+done
+
+if [ "$OLLAMA_READY" = "0" ]; then
+    echo "   -> WARNING: Ollama may not be ready yet. AI might take longer on first query."
+fi
+
+# ON-BOOT MODEL CREATION (GGUF Strategy - Offline Mode)
+echo "   -> Creating AI Model 'nexos-expert'..."
+
+# Set Ollama to local-only mode (no network pulling)
+export OLLAMA_HOST="127.0.0.1:11434"
+
+if [ -f /root/Modelfile ] && [ -f /root/nexos-expert.gguf ]; then
+    # Try to create model with retry
+    for attempt in 1 2 3; do
+        echo "   -> Attempt $attempt/3..."
+        /bin/ollama create nexos-expert -f /root/Modelfile 2>&1
+        RESULT=$?
+        if [ $RESULT -eq 0 ]; then
+            echo "   -> Model 'nexos-expert' created successfully!"
+            break
+        fi
+        echo "   -> Attempt $attempt failed, retrying in 3 seconds..."
+        /bin/busybox sleep 3
+    done
+    
+    # Verify model exists
+    if /bin/ollama list 2>/dev/null | /bin/busybox grep -q "nexos-expert"; then
+        echo "   -> Model verification: OK"
+    else
+        echo "   -> WARNING: Model may not be ready. First AI query might take longer."
+    fi
+else
+    echo "   -> ERROR: Missing /root/Modelfile or /root/nexos-expert.gguf!"
+fi
+
+# 4. Create dummy log file for testing (so 'analiz' matches something)
+echo "192.168.1.1 - - [07/Dec/2025:10:00:00] \"GET /index.html HTTP/1.1\" 200 1024" > /access.log
+echo "192.168.1.5 - - [07/Dec/2025:10:05:00] \"GET /admin.php HTTP/1.1\" 404 512" >> /access.log
+
+# 4.5 Link logs to Web Server
+/bin/busybox ln -sf /access.log /var/www/access.log
+/bin/busybox ln -sf /var/log/ollama.log /var/www/ollama.log
+/bin/busybox ln -sf /var/log/dhcp.log /var/www/dhcp.log
+
+# 5. Launch NexOS
+echo "Running /bin/nexos with cttyhack..."
+# We loop it so if the user types 'cikis' or it crashes, it restarts.
+while true; do
+    # Use setsid + cttyhack to ensure we have a controlling terminal
+    # This fixes "tcgetattr: Inappropriate ioctl for device"
+    # DO NOT use 'exec' here, or when nexos exits, init (PID 1) dies -> Kernel Panic
+    /bin/busybox setsid /bin/busybox cttyhack /bin/nexos
+    
+    RET=$?
+    echo "NexOS exited with code $RET. Restarting shell in 2 seconds..."
+    sleep 2
+    echo "Starting fallback /bin/sh..."
+    /bin/busybox setsid /bin/busybox cttyhack /bin/sh
+done

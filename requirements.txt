@@ -1,0 +1,88 @@
+os project:
+
+
+15) Basit Sanallaştırılmış İşletim Sistemi Katmanı
+Bir “Mini-OS çekirdeği” yerine, mevcut bir işletim sistemi üzerinde çalışan bir
+sanal işletim katmanı geliştirin.
+Bu katman, uygulamaların izole biçimde çalışmasını sağlar (örneğin her
+uygulama için ayrı bellek alanı taklidi).
+Süreç, dosya ve bellek yönetimi simüle edilmelidir, ancak gerçek donanım
+erişimi yapılmayacaktır.
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Adım 1: Projenin Amacını Belirleyin
+ Hedefler: İşletim sisteminizin neyi başarmasını istediğinize karar verin.
+Örneğin:
+
+o Bir komut satırı arayüzü (CLI) sunacak mı?
+o Basit dosya işlemleri (okuma/yazma) yapılabilecek mi?
+o Çoklu işlem veya temel bellek yönetimi olacak mı?
+ Amaç: Eğitim amaçlı mı, yoksa minimal bir gerçek işletim sistemi mi?
+Adım 2: Çalışma Ortamını Ayarlayın
+Gerekli Araçlar:
+1. Dil: C veya C++ (düşük seviyeli kontrol için ideal).
+2. Derleyici: GCC veya Clang.
+3. Emülatör: QEMU veya Bochs (OS&#39;inizi gerçek donanım yerine sanal
+ortamda test edebilirsiniz).
+4. Bootloader: GRUB (işletim sisteminizi yüklemek için).
+5. Hex Editor: Binary dosyaları incelemek için.
+6. OS Dev Kitaplığı: OSDev.org rehberlerini kullanabilirsiniz.
+Adım 3: Çekirdek (Kernel) Geliştirme
+Çekirdek, işletim sisteminin kalbidir. Başlangıçta monolitik bir yapı
+kullanabilirsiniz.
+1. Bootloader Yazma veya Kullanma
+ GRUB gibi hazır bir bootloader kullanarak zaman kazanabilirsiniz.
+ Bootloader, işletim sistemi çekirdeğini belleğe yükler ve çalıştırır.
+2. Çekirdek Başlangıcı (Kernel Entry)
+ Çekirdek kodunuz genellikle C&#39;de yazılır, ancak başlangıç kodu assembly
+olabilir.
+3. Hedefler:
+ Multitasking: Basit bir süreç zamanlayıcı.
+ Interrupt Handling: Klavye veya saat kesmeleri için bir interrupt
+handler.
+ Bellek Yönetimi: Basit bir bellek tahsisi ve serbest bırakma
+mekanizması.
+
+Adım 4: Dosya Sistemi Tasarımı
+Basit bir dosya sistemi yazabilir veya mevcut bir dosya sistemini (örneğin
+FAT12) destekleyebilirsiniz.
+ Temel Yapılar:
+o Superblock: Dosya sisteminin meta verisi.
+o Inode: Her dosyanın meta verisi (örneğin boyut, konum).
+o Veri Blokları: Dosyaların saklandığı alan.
+ İşlevler:
+o read_file(): Bir dosyayı belleğe okur.
+o write_file(): Dosyayı saklar.
+o list_files(): Mevcut dosyaları listeler.
+
+Adım 5: Giriş/Çıkış (I/O) Yönetimi
+ Ekrana Yazma: Video belleğine (0xB8000) doğrudan erişimle metin
+yazdırabilirsiniz.
+ Klavyeden Okuma: Basit bir interrupt handler ile klavye girdilerini
+okuyabilirsiniz.
+Adım 6: Zamanlama ve Çoklu Görev (Multitasking)
+ Basit bir Round Robin veya First Come First Serve (FCFS) algoritması
+kullanabilirsiniz.
+ İşlemleri (threads) bir dizi veya kuyrukta tutabilirsiniz.
+Adım 7: Sistem Çağrıları (System Calls)
+Kullanıcı uygulamalarının çekirdek fonksiyonlarına erişmesini sağlamak için
+sistem çağrıları ekleyin.
+Adım 8: Test ve Geliştirme
+ Test Ortamı: QEMU veya Bochs kullanarak işletim sisteminizi başlatın.
+ Hata Ayıklama: GDB ile çekirdek ve uygulamalarınızı adım adım test
+edin.
+
+****Her bir proje için bir detaylı rapor ve sunum dosyası hazırlanmalıdır.
+
+
+
+
+linux project:
+
+9. Web Log (access.log) Analiz Araci Apache/Nginx access.log dosyasindan en cok ziyaret
+edilen sayfalar, IP adresleri ve hata kodlarini (awk, sort, uniq) analiz eden arac. Ek: Gunluk veya
+haftalik rapor.
+
+
+Her bir öğrenci kendi proje sunumunu pdf olarak yüklemelidir. Pdf içerisinde proje konusu, script, çalışma ekran görüntüsü, ve yorum kısımları olmasını bekliyoruz.
